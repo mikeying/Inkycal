@@ -169,6 +169,46 @@ tests = [
             "language": "en"
         }
     },
+    {
+        "position": 1,
+        "name": "Weather",
+        "config": {
+            "size": [500, 150],
+            "api_key": owm_api_key,
+            "location": location,
+            "round_temperature": True,
+            "round_windspeed": True,
+            "forecast_interval": "daily",
+            "units": "imperial",
+            "hour_format": "12",
+            "use_beaufort": False,
+            "show_today_high_and_low": True,
+            "padding_x": 10,
+            "padding_y": 10,
+            "fontsize": 12,
+            "language": "en"
+        }
+    },
+    {
+        "position": 1,
+        "name": "Weather",
+        "config": {
+            "size": [500, 150],
+            "api_key": owm_api_key,
+            "location": location,
+            "round_temperature": True,
+            "round_windspeed": True,
+            "forecast_interval": "daily",
+            "units": "imperial",
+            "hour_format": "12",
+            "use_beaufort": False,
+            "show_today_high_and_low": False,
+            "padding_x": 10,
+            "padding_y": 10,
+            "fontsize": 12,
+            "language": "en"
+        }
+    },
 ]
 
 

@@ -68,6 +68,11 @@ class Weather(InkycalModule):
             "options": [True, False],
         },
 
+        "show_today_high_and_low": {
+            "label": "Show today's high and low temperature below the left graphic?",
+            "options": [True, False],
+        },
+
     }
 
     def __init__(self, config):
@@ -93,6 +98,7 @@ class Weather(InkycalModule):
         self.round_wind_speed = config['round_windspeed']
         self.forecast_interval = config['forecast_interval']
         self.hour_format = int(config['hour_format'])
+        self.show_today_high_and_low = config.get('show_today_high_and_low', False)
         if config['units'] == "imperial":
             self.temp_unit = "fahrenheit"
         else:
@@ -383,13 +389,30 @@ class Weather(InkycalModule):
         moon_phase = get_moon_phase()
 
         # Fill weather details in col 1 (current weather icon)
-        canvas.draw_icon(
-            xy=weather_icon_pos,
-            box_size=(col_width, im_height),
-            icon=weather_icons[weather_icon],
-            colour="colour",
-            font=self.weatherfont
-        )
+        if self.show_today_high_and_low:
+            canvas.draw_icon(
+                xy=weather_icon_pos,
+                box_size=(col_width, row2 + row_height),
+                icon=weather_icons[weather_icon],
+                colour="colour",
+                font=self.weatherfont
+            )
+            # Retrieve today's daily forecast
+            today_forecast = self.owm.get_forecast_for_day(0)
+            today_temp = f'{today_forecast["temp_min"]:.{dec_temp}f}{self.tempDispUnit}/{today_forecast["temp_max"]:.{dec_temp}f}{self.tempDispUnit}'
+            canvas.write(
+                xy=(col1, row3),
+                box_size=(col_width, row_height),
+                text=today_temp
+            )
+        else:
+            canvas.draw_icon(
+                xy=weather_icon_pos,
+                box_size=(col_width, im_height),
+                icon=weather_icons[weather_icon],
+                colour="colour",
+                font=self.weatherfont
+            )
 
         # Fill weather details in col 2 (temp, humidity, wind)
         canvas.draw_icon(
