@@ -73,6 +73,11 @@ class Weather(InkycalModule):
             "options": [True, False],
         },
 
+        "show_location": {
+            "label": "Show location name at top of today's weather?",
+            "options": [True, False],
+        },
+
     }
 
     def __init__(self, config):
@@ -99,6 +104,7 @@ class Weather(InkycalModule):
         self.forecast_interval = config['forecast_interval']
         self.hour_format = int(config['hour_format'])
         self.show_today_high_and_low = config.get('show_today_high_and_low', False)
+        self.show_location = config.get('show_location', False)
         if config['units'] == "imperial":
             self.temp_unit = "fahrenheit"
         else:
@@ -389,11 +395,45 @@ class Weather(InkycalModule):
 
         moon_phase = get_moon_phase()
 
+        # Calculate today section layout (scaling down rows if location header is shown)
+        if self.show_location:
+            location_name = current_weather.get("location_name") or self.location
+            loc_height = max(12, int(row_height * 0.55))
+            available_today_h = (row3 + row_height) - (row1 + loc_height)
+            line_gap_today = max(0, int(line_gap * 0.7))
+            row_height_today = max(10, int((available_today_h - 2 * line_gap_today) // 3))
+            icon_small_today = min(icon_small, max(8, int(row_height_today * 0.85)))
+            row1_today = row1 + loc_height + line_gap_today
+            row2_today = row1_today + row_height_today + line_gap_today
+            row3_today = row2_today + row_height_today + line_gap_today
+            weather_icon_top = row1_today
+        else:
+            location_name = ""
+            loc_height = 0
+            available_today_h = im_height
+            line_gap_today = line_gap
+            row_height_today = row_height
+            icon_small_today = icon_small
+            row1_today = row1
+            row2_today = row2
+            row3_today = row3
+            weather_icon_top = 0
+
+        # If show_location is enabled, render location label at the top of today's weather box
+        if self.show_location and location_name:
+            canvas.write(
+                xy=(col1, row1),
+                box_size=(col_width * 3 - 3, loc_height),
+                text=str(location_name),
+                autofit=True,
+                alignment="center"
+            )
+
         # Fill weather details in col 1 (current weather icon)
         if self.show_today_high_and_low:
             canvas.draw_icon(
-                xy=weather_icon_pos,
-                box_size=(col_width, row2 + row_height),
+                xy=(col1, weather_icon_top),
+                box_size=(col_width, row_height_today * 2 + line_gap_today),
                 icon=weather_icons[weather_icon],
                 colour="colour",
                 font=self.weatherfont
@@ -402,14 +442,14 @@ class Weather(InkycalModule):
             today_forecast = self.owm.get_forecast_for_day(0)
             today_temp = f'{today_forecast["temp_min"]:.{dec_temp}f}{self.tempDispUnit}/{today_forecast["temp_max"]:.{dec_temp}f}{self.tempDispUnit}'
             canvas.write(
-                xy=(col1, row3),
-                box_size=(col_width, row_height),
+                xy=(col1, row3_today),
+                box_size=(col_width, row_height_today),
                 text=today_temp
             )
         else:
             canvas.draw_icon(
-                xy=weather_icon_pos,
-                box_size=(col_width, im_height),
+                xy=(col1, weather_icon_top),
+                box_size=(col_width, (row3_today + row_height_today - weather_icon_top) if self.show_location else im_height),
                 icon=weather_icons[weather_icon],
                 colour="colour",
                 font=self.weatherfont
@@ -417,81 +457,81 @@ class Weather(InkycalModule):
 
         # Fill weather details in col 2 (temp, humidity, wind)
         canvas.draw_icon(
-            xy=temperature_icon_pos,
-            box_size=(icon_small, row_height),
+            xy=(col2, row1_today),
+            box_size=(icon_small_today, row_height_today),
             icon='\uf053',
             colour="colour",
             font=self.weatherfont
         )
         canvas.write(
-            xy=temperature_pos,
-            box_size=(col_width - icon_small, row_height),
+            xy=(col2 + icon_small_today, row1_today),
+            box_size=(col_width - icon_small_today, row_height_today),
             text=temperature,
             colour="colour" if is_negative(temperature) else "black"
         )
 
         canvas.draw_icon(
-            xy=humidity_icon_pos,
-            box_size=(icon_small, row_height),
+            xy=(col2, row2_today),
+            box_size=(icon_small_today, row_height_today),
             icon='\uf07a',
             colour="colour",
             font=self.weatherfont
         )
 
         canvas.write(
-            xy=humidity_pos,
-            box_size=(col_width - icon_small, row_height),
+            xy=(col2 + icon_small_today, row2_today),
+            box_size=(col_width - icon_small_today, row_height_today),
             text=f"{humidity} %",
         )
 
         canvas.draw_icon(
-            xy=windspeed_icon_pos,
-            box_size=(icon_small, icon_small),
+            xy=(col2, row3_today),
+            box_size=(icon_small_today, icon_small_today),
             icon='\uf050',
             colour="colour",
             font=self.weatherfont
         )
 
         canvas.write(
-            xy=windspeed_pos,
-            box_size=(col_width - icon_small, row_height),
+            xy=(col2 + icon_small_today, row3_today),
+            box_size=(col_width - icon_small_today, row_height_today),
             text=wind
         )
 
         # Fill weather details in col 3 (moonphase, sunrise, sunset)
         canvas.draw_icon(
-            xy=moonphase_pos,
-            box_size=(col_width, row_height),
+            xy=(col3, row1_today),
+            box_size=(col_width, row_height_today),
             icon=moon_phase,
             colour="colour",
             font=self.weatherfont
         )
 
         canvas.draw_icon(
-            xy=sunrise_icon_pos,
-            box_size=(icon_small, icon_small),
+            xy=(col3, row2_today),
+            box_size=(icon_small_today, icon_small_today),
             icon='\uf051',
             colour="colour",
             font=self.weatherfont
         )
 
         canvas.write(
-            xy=sunrise_time_pos,
-            box_size=(col_width - icon_small, row_height),
+            xy=(col3 + icon_small_today, row2_today),
+            box_size=(col_width - icon_small_today, row_height_today),
             text=sunrise
         )
 
         canvas.draw_icon(
-            xy=sunset_icon_pos,
-            box_size=(icon_small, icon_small),
+            xy=(col3, row3_today),
+            box_size=(icon_small_today, icon_small_today),
             icon='\uf052',
             colour="colour",
             font=self.weatherfont
         )
 
         canvas.write(
-            xy=sunset_time_pos,
-            box_size=(col_width - icon_small, row_height),
+            xy=(col3 + icon_small_today, row3_today),
+            box_size=(col_width - icon_small_today, row_height_today),
             text=sunset
         )
         # Add the forecast data to the correct places

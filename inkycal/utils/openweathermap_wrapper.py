@@ -101,6 +101,7 @@ class OpenWeatherMap:
             "uvi": data.get("uvi"),
             "sunrise": datetime.fromtimestamp(data["sys"]["sunrise"], tz=self.tz_zone),
             "sunset": datetime.fromtimestamp(data["sys"]["sunset"], tz=self.tz_zone),
+            "location_name": data.get("name", ""),
         }
 
         return weather

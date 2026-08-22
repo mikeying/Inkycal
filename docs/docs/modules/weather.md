@@ -29,6 +29,8 @@ The `Weather` module renders current conditions and a short forecast using OpenW
 | `units` | `metric` / `imperial` | Affects temp and wind conversion |
 | `hour_format` | `12` / `24` | Sunrise/sunset and hourly stamps |
 | `use_beaufort` | `true` / `false` | Use Beaufort scale for wind |
+| `show_today_high_and_low` | `true` / `false` | Show today's high and low below the left graphic |
+| `show_location` | `true` / `false` | Show resolved location name at top of today's section |
 
 ## Example
 
