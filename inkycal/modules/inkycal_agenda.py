@@ -164,24 +164,31 @@ class Agenda(InkycalModule):
         if upcoming_events:
             logger.info('Managed to parse events from urls')
 
-            # Find out how much space the event times take
-            time_width = int(max([canvas.get_text_width(
-                events['begin'].format(self.time_format, locale=self.language))
-                for events in upcoming_events]) + 10)
+            # Find out how much space the event times take dynamically
+            timed_events = [e for e in upcoming_events if not ical.all_day(e)]
+            if timed_events:
+                time_strings = [
+                    e['begin'].format(self.time_format, locale=self.language)
+                    for e in timed_events
+                ]
+                time_width = max(canvas.get_text_width(ts) for ts in time_strings) + 4
+            else:
+                time_width = max(canvas.get_text_width("12:00 PM"), line_height)
+
+            # Ensure time_width does not exceed a reasonable fraction of column width
+            time_width = min(time_width, int(col_width * 0.4))
             logger.debug(f'time_width: {time_width}')
 
-            # Calculate x-pos for time
-            x_time = int(date_width/3)
-            logger.debug(f'x-time: {x_time}')
-
-            # Calculate x-pos for event titles
-            x_event = x_time + time_width
-            logger.debug(f'x-event: {x_event}')
+            # Position time at the left edge of the column and calculate event start
+            x_time = 0
+            gap = 2
+            x_event = x_time + time_width + gap
+            logger.debug(f'x-time: {x_time}, x-event: {x_event}')
 
             # Find out how much space is left for event titles
-            event_width = col_width - x_event 
+            event_width = col_width - x_event
             logger.debug(f'width for events: {event_width}')
-            
+
             # Calculate bullet width
             bullet = " • "
             bullet_width = canvas.get_text_width(bullet)

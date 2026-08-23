@@ -142,3 +142,69 @@ class TestAgenda(unittest.TestCase):
             with self.assertRaises(ValueError):
                 Module(test)
             logger.info('Caught expected ValueError')
+
+
+class TestAgendaDynamicColumnSizing(unittest.TestCase):
+    """Test dynamic time column sizing and maximized event title width across screen sizes."""
+
+    def test_dynamic_sizing_with_events(self):
+        from unittest.mock import patch, MagicMock
+        import arrow
+
+        now = arrow.now()
+        mock_events = [
+            {
+                "begin": now.replace(hour=9, minute=30),
+                "end": now.replace(hour=10, minute=30),
+                "title": "Team Standup Meeting with Long Project Discussion",
+            },
+            {
+                "begin": now.replace(hour=14, minute=0),
+                "end": now.replace(hour=15, minute=0),
+                "title": "One-on-One Sync",
+            },
+            {
+                "begin": now.floor("day"),
+                "end": now.ceil("day"),
+                "title": "Company Holiday",
+            },
+        ]
+
+        screen_sizes = [
+            ([400, 300], 1, 14),
+            ([528, 400], 2, 14),
+            ([800, 600], 2, 18),
+            ([984, 824], 2, 24),
+            ([1200, 800], 2, 20),
+        ]
+
+        for size, columns, fontsize in screen_sizes:
+            config = {
+                "name": "Agenda",
+                "config": {
+                    "size": size,
+                    "ical_urls": "https://example.com/calendar.ics",
+                    "ical_files": None,
+                    "date_format": "dddd MMMM D",
+                    "time_format": "h:mm a",
+                    "padding_x": 4,
+                    "padding_y": 4,
+                    "fontsize": fontsize,
+                    "language": "en",
+                    "columns": columns,
+                }
+            }
+
+            with patch("inkycal.modules.inkycal_agenda.iCalendar") as mock_ical_class:
+                mock_ical = MagicMock()
+                mock_ical.get_events.return_value = list(mock_events)
+                mock_ical.all_day.side_effect = lambda e: e["title"] == "Company Holiday"
+                mock_ical_class.return_value = mock_ical
+
+                module = Module(config)
+                im_black, im_colour = module.generate_image()
+
+                expected_w = size[0] - 2 * 4
+                expected_h = size[1] - 2 * 4
+                self.assertEqual(im_black.size, (expected_w, expected_h))
+                self.assertEqual(im_colour.size, (expected_w, expected_h))
