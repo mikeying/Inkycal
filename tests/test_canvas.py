@@ -147,6 +147,23 @@ class TestCanvas(unittest.TestCase):
         px = preview.getpixel((10, 10))
         self.assertEqual(px, (255, 0, 0))  # final composite is RGB, since pasted onto black layer
 
+    def test_write_autofit_does_not_mutate_canvas_font_size(self):
+        """Test that calling write with autofit=True in a small box does not mutate canvas font_size."""
+        initial_font_size = self.canvas.font_size
+        self.assertEqual(initial_font_size, 12)
+
+        # Call write with autofit=True in a tiny box
+        self.canvas.write(
+            xy=(0, 0),
+            box_size=(100, 15),
+            text="Small Header Label",
+            autofit=True
+        )
+
+        # Canvas font_size and internal font must remain untouched
+        self.assertEqual(self.canvas.font_size, initial_font_size)
+        self.assertEqual(self.canvas._font.size, initial_font_size)
+
 
 if __name__ == "__main__":
     unittest.main()

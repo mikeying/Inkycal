@@ -90,9 +90,6 @@ class Canvas:
 
                 size += 1
 
-            self._font_size = size
-            self._font = font
-
         # ----------------------------
         # 2) Split text into logical lines
         # ----------------------------
@@ -103,7 +100,7 @@ class Canvas:
         # ----------------------------
         wrapped_lines: list[str] = []
         for line in logical_lines:
-            wrapped_lines.extend(self.text_wrap(line, max_width=int(box_w * fill_width)))
+            wrapped_lines.extend(self.text_wrap(line, max_width=int(box_w * fill_width), font=font))
 
         if not wrapped_lines:
             return
@@ -175,19 +172,20 @@ class Canvas:
         if colour == "colour":
             self.image_colour.paste(space, xy, space)
 
-    def text_wrap(self, text: str, max_width: int) -> list[str]:
+    def text_wrap(self, text: str, max_width: int, font: Optional[ImageFont.FreeTypeFont] = None) -> list[str]:
         """
-        Split long text into wrapped lines using the Canvas' current font.
+        Split long text into wrapped lines using the Canvas' current font (or provided font).
 
         Args:
             text: The full text to wrap.
             max_width: Maximum pixel width allowed per line.
+            font: Optional font instance to use for measurement.
 
         Returns:
             A list of strings, each representing one wrapped line.
         """
 
-        font = self._font
+        font = font or self._font
         words = text.split(" ")
         lines = []
         current_line = ""
